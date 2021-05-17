@@ -245,19 +245,77 @@ static inline crypto_word constant_time_select_w(crypto_word mask,
 
 // Endianness conversions.
 
-#if defined(__GNUC__) && __GNUC__ >= 2
-static inline uint32_t CRYPTO_bswap4(uint32_t x) {
-  return __builtin_bswap32(x);
+static inline uint32_t CRYPTO_read_le32(const uint8_t *p) {
+  return (((uint32_t)p[0]) |
+          (((uint32_t)p[1]) << 8) |
+          (((uint32_t)p[2]) << 16) |
+          (((uint32_t)p[3]) << 24));
 }
-#elif defined(_MSC_VER)
-#pragma warning(push, 3)
-#include <stdlib.h>
-#pragma warning(pop)
-#pragma intrinsic(_byteswap_uint64, _byteswap_ulong)
-static inline uint32_t CRYPTO_bswap4(uint32_t x) {
-  return _byteswap_ulong(x);
+
+static inline uint32_t CRYPTO_read_be32(const uint8_t *p) {
+  return ((((uint32_t)p[0]) << 24) |
+          (((uint32_t)p[1]) << 16) |
+          (((uint32_t)p[2]) << 8) |
+          ((uint32_t)p[3]));
 }
-#endif
+
+static inline uint64_t CRYPTO_read_le64(const uint8_t *p) {
+  return (((uint64_t)p[0]) |
+          (((uint64_t)p[1]) << 8) |
+          (((uint64_t)p[2]) << 16) |
+          (((uint64_t)p[3]) << 24) |
+          (((uint64_t)p[4]) << 32) |
+          (((uint64_t)p[5]) << 40) |
+          (((uint64_t)p[6]) << 48) |
+          (((uint64_t)p[7]) << 56));
+}
+
+static inline uint64_t CRYPTO_read_be64(const uint8_t *p) {
+  return ((((uint64_t)p[0]) << 56) |
+          (((uint64_t)p[1]) << 48) |
+          (((uint64_t)p[2]) << 40) |
+          (((uint64_t)p[3]) << 32) |
+          (((uint64_t)p[4]) << 24) |
+          (((uint64_t)p[5]) << 16) |
+          (((uint64_t)p[6]) << 8) |
+          ((uint64_t)p[7]));
+}
+
+static inline void CRYPTO_write_le32(uint32_t v, uint8_t *p) {
+  p[0] = (uint8_t)(v & 0xff);
+  p[1] = (uint8_t)((v >> 8) & 0xff);
+  p[2] = (uint8_t)((v >> 16) & 0xff);
+  p[3] = (uint8_t)((v >> 24) & 0xff);
+}
+
+static inline void CRYPTO_write_be32(uint32_t v, uint8_t *p) {
+  p[0] = (uint8_t)((v >> 24) & 0xff);
+  p[1] = (uint8_t)((v >> 16) & 0xff);
+  p[2] = (uint8_t)((v >> 8) & 0xff);
+  p[3] = (uint8_t)(v & 0xff);
+}
+
+static inline void CRYPTO_write_le64(uint64_t v, uint8_t *p) {
+  p[0] = (uint8_t)(v & 0xff);
+  p[1] = (uint8_t)((v >> 8) & 0xff);
+  p[2] = (uint8_t)((v >> 16) & 0xff);
+  p[3] = (uint8_t)((v >> 24) & 0xff);
+  p[4] = (uint8_t)((v >> 32) & 0xff);
+  p[5] = (uint8_t)((v >> 40) & 0xff);
+  p[6] = (uint8_t)((v >> 48) & 0xff);
+  p[7] = (uint8_t)((v >> 56) & 0xff);
+}
+
+static inline void CRYPTO_write_be64(uint64_t v, uint8_t *p) {
+  p[0] = (uint8_t)((v >> 56) & 0xff);
+  p[1] = (uint8_t)((v >> 48) & 0xff);
+  p[2] = (uint8_t)((v >> 40) & 0xff);
+  p[3] = (uint8_t)((v >> 32) & 0xff);
+  p[4] = (uint8_t)((v >> 24) & 0xff);
+  p[5] = (uint8_t)((v >> 16) & 0xff);
+  p[6] = (uint8_t)((v >> 8) & 0xff);
+  p[7] = (uint8_t)(v & 0xff);
+}
 
 #if !defined(GFp_NOSTDLIBINC)
 #include <string.h>

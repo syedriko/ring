@@ -29,7 +29,6 @@
 #pragma GCC diagnostic ignored "-Wconversion"
 #endif
 
-// We can assume little-endian.
 static uint32_t U8TO32_LE(const uint8_t *m) {
   uint32_t r;
   GFp_memcpy(&r, m, sizeof(r));

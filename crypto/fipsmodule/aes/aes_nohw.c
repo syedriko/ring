@@ -348,17 +348,17 @@ static inline void aes_nohw_compact_block(aes_word_t out[AES_NOHW_BLOCK_WORDS],
                                           const uint8_t in[16]) {
   GFp_memcpy(out, in, 16);
 #if defined(OPENSSL_SSE2)
-  // No conversions needed.
+  OPENSSL_memcpy(out, in, 16);  // No conversions needed.
 #elif defined(OPENSSL_64_BIT)
-  uint64_t a0 = aes_nohw_compact_word(out[0]);
-  uint64_t a1 = aes_nohw_compact_word(out[1]);
+  uint64_t a0 = aes_nohw_compact_word(CRYPTO_read_le64(in));
+  uint64_t a1 = aes_nohw_compact_word(CRYPTO_read_le64(in + 8));
   out[0] = (a0 & UINT64_C(0x00000000ffffffff)) | (a1 << 32);
   out[1] = (a1 & UINT64_C(0xffffffff00000000)) | (a0 >> 32);
 #else
-  uint32_t a0 = aes_nohw_compact_word(out[0]);
-  uint32_t a1 = aes_nohw_compact_word(out[1]);
-  uint32_t a2 = aes_nohw_compact_word(out[2]);
-  uint32_t a3 = aes_nohw_compact_word(out[3]);
+  uint32_t a0 = aes_nohw_compact_word(CRYPTO_read_le32(in));
+  uint32_t a1 = aes_nohw_compact_word(CRYPTO_read_le32(in + 4));
+  uint32_t a2 = aes_nohw_compact_word(CRYPTO_read_le32(in + 8));
+  uint32_t a3 = aes_nohw_compact_word(CRYPTO_read_le32(in + 12));
   // Note clang, when building for ARM Thumb2, will sometimes miscompile
   // expressions such as (a0 & 0x0000ff00) << 8, particularly when building
   // without optimizations. This bug was introduced in
@@ -382,6 +382,7 @@ static inline void aes_nohw_uncompact_block(
       aes_nohw_uncompact_word((a0 & UINT64_C(0x00000000ffffffff)) | (a1 << 32));
   uint64_t b1 =
       aes_nohw_uncompact_word((a1 & UINT64_C(0xffffffff00000000)) | (a0 >> 32));
+
   GFp_memcpy(out, &b0, 8);
   GFp_memcpy(out + 8, &b1, 8);
 #else
@@ -925,18 +926,17 @@ void GFp_aes_nohw_ctr32_encrypt_blocks(const uint8_t *in, uint8_t *out,
 
   // Make |AES_NOHW_BATCH_SIZE| copies of |ivec|.
   alignas(AES_NOHW_WORD_SIZE) union {
-    uint32_t u32[AES_NOHW_BATCH_SIZE * 4];
     uint8_t u8[AES_NOHW_BATCH_SIZE * 16];
   } ivs, enc_ivs;
   for (size_t i = 0; i < AES_NOHW_BATCH_SIZE; i++) {
     GFp_memcpy(ivs.u8 + 16 * i, ivec, 16);
   }
 
-  uint32_t ctr = CRYPTO_bswap4(ivs.u32[3]);
+  uint32_t ctr = CRYPTO_read_be32(ivs.u8 + 12);
   for (;;) {
     // Update counters.
     for (uint32_t i = 0; i < AES_NOHW_BATCH_SIZE; i++) {
-      ivs.u32[4 * i + 3] = CRYPTO_bswap4(ctr + i);
+      CRYPTO_write_be32(ctr + i, ivs.u8 + 16 * i + 12);
     }
 
     size_t todo = blocks >= AES_NOHW_BATCH_SIZE ? AES_NOHW_BATCH_SIZE : blocks;

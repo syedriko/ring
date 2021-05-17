@@ -218,7 +218,7 @@ mod sysrand_chunk {
         const SYS_GETRANDOM: c_long = 318;
 
         let chunk_len: c::size_t = dest.len();
-        let r = unsafe { libc::syscall(SYS_GETRANDOM, dest.as_mut_ptr(), chunk_len, 0) };
+        let r = unsafe { libc::syscall(libc::SYS_getrandom, dest.as_mut_ptr(), chunk_len, 0) };
         if r < 0 {
             let errno;
 
