@@ -50,7 +50,14 @@ typedef unsigned char P256_SCALAR_BYTES[33];
 
 static inline void p256_scalar_bytes_from_limbs(
     P256_SCALAR_BYTES bytes_out, const BN_ULONG limbs[P256_LIMBS]) {
-  OPENSSL_memcpy(bytes_out, limbs, 32);
+  for (int i = 0; i < P256_LIMBS; i++)
+  {
+#if BN_BITS2 == 64
+    CRYPTO_write_le64(limbs[i], bytes_out + i * 8);
+#else
+    CRYPTO_write_le32(limbs[i], bytes_out + i * 4);
+#endif
+  }
   bytes_out[32] = 0;
 }
 

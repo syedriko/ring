@@ -29,15 +29,12 @@
 #pragma GCC diagnostic ignored "-Wconversion"
 #endif
 
-// We can assume little-endian.
 static uint32_t U8TO32_LE(const uint8_t *m) {
-  uint32_t r;
-  OPENSSL_memcpy(&r, m, sizeof(r));
-  return r;
+  return CRYPTO_read_le32(m);
 }
 
 static void U32TO8_LE(uint8_t *m, uint32_t v) {
-  OPENSSL_memcpy(m, &v, sizeof(v));
+  CRYPTO_write_le32(v, m);
 }
 
 static uint64_t mul32x32_64(uint32_t a, uint32_t b) { return (uint64_t)a * b; }
